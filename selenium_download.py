@@ -24,9 +24,9 @@ station = ["CENTRAL/WESTERN",
            "SHATIN", 
            "TAI PO", 
            "TAP MUN", 
-           #"TSEUNG KWAN O", 
+           "TSEUNG KWAN O", 
            "TSUEN WAN", 
-           #"TUEN MUN", 
+           "TUEN MUN", 
            "TUNG CHUNG", 
            "YUEN LONG", 
            "CAUSEWAY BAY", 
@@ -50,7 +50,10 @@ chromeDriver = os.path.join(wd, "chromedriver.exe")
 
     
 
-def dl_csv(station, fromYear=2016, toYear=2016):
+def dl_csv(station, startYear=1990, endYear=2016):
+    if endYear < startYear:
+        print("'endYear < startYear'")
+        return None
     # Turn on driver
     driver = webdriver.Chrome(executable_path=chromeDriver, 
                               chrome_options=chromeOptions)
@@ -73,19 +76,31 @@ def dl_csv(station, fromYear=2016, toYear=2016):
         time.sleep(0.5)
     
     # Click 'Hourly'
-    driver.find_element_by_xpath("//label[contains(text(), 'Hourly')]").click()
+    driver.find_element_by_xpath("//input[@value='hourly']").click()
+    driver.find_element_by_xpath("//a[@id='form:select']").click()
     time.sleep(0.5)
     
+    # Start date and end date
+    startDate = driver.find_element_by_xpath("//span[@id='form:hourlyStartDate']").text
+    startDate = re.split(pattern="-", string=startDate)
+    startDate = [int(x) for x in startDate]
+    endDate = driver.find_element_by_xpath("//span[@id='form:hourlyEndDate']").text
+    endDate = re.split(pattern="-", string=endDate)
+    endDate = [int(x) for x in endDate]
+    
     # Click date
-    for year in range(fromYear, toYear + 1):
-        date = [("form:dailyFromYear", year), 
-                ("form:dailyFromMonth", 1), 
-                ("form:dailyFromDay", 1), 
-                ("form:dailyToYear", year)]
-        if year == 2016:
-            # Date updated to 2016-03-31
-            date += [("form:dailyToMonth", 3), 
-                     ("form:dailyToDay", 31)]
+    for year in range(max(startYear, startDate[2]), min(endYear, endDate[2]) + 1):
+        date = [("form:dailyFromYear", year)]
+        if year == startDate[2]:
+            date +=[("form:dailyFromMonth", startDate[1]), 
+                    ("form:dailyFromDay", startDate[0])]
+        else:
+            date +=[("form:dailyFromMonth", 1), 
+                    ("form:dailyFromDay", 1)]
+        date += [("form:dailyToYear", year)]
+        if year == endDate[2]:
+            date += [("form:dailyToMonth", endDate[1]), 
+                     ("form:dailyToDay", endDate[0])]
         else:
             date += [("form:dailyToMonth", 12), 
                      ("form:dailyToDay", 31)]
@@ -115,19 +130,21 @@ def dl_csv(station, fromYear=2016, toYear=2016):
                 if t > 120:
                     print("The download time is too long.")
                     break
+        
+        # Take a 10 seconds break after each download
+        time.sleep(10)
     
-    # Take a 10 seconds break
-    time.sleep(10)
-    
-    # Shutdown driver
+    # Close the browser and shut down the driver
     driver.quit()
 
 
-dl_csv(station="MONG KOK", fromYear=1999, toYear=1999)
 
 
-
-
-# Start downloading data
+# Start downloading data from 2000 to 2016
 for s in station:
-    dl_csv(station=s, fromYear=2000, toYear=2016)
+    dl_csv(station=s)
+
+
+
+
+
