@@ -1,25 +1,35 @@
 import os
+import re
 import pandas as pd
 
 # All downloaded csv
-csv = os.listdir("rawdata")
+fileName = os.listdir("rawdata")
+station = [re.sub("AIR_[0-9]{4}_(.*)\.csv", "\\1", x) for x in fileName]
+station = pd.unique(station)
 
-# Read all downloaded csv
-csv = [pd.read_csv(os.path.join("rawdata", x), 
-                   skiprows=11, na_values="N.A.") 
-       for x in csv]
+# Read downloaded csv
+def read_air_quality(x):
+    file = pd.read_csv(os.path.join("rawdata", x), 
+                       skiprows=11, na_values="N.A.")
+    file["DATE"] = pd.to_datetime(file.DATE, format="%d/%m/%Y")
+    print("%s was read." % (x))
+    return file
 
-# Concatenate all csv
-air_quality = pd.concat(csv).reset_index(drop=True)
+# Combine data by station
+for s in station:
+    files = [x for x in fileName if re.sub("AIR_[0-9]{4}_(.*)\.csv", "\\1", x) == s]
+    files = [read_air_quality(x) for x in files]
+    air_quality = pd.concat(files, axis=0)
+    air_quality = air_quality.sort_values(by=["STATION", "DATE", "HOUR"])
+    path = "data/air_quality_%s.tsv" % s
+    air_quality.to_csv(path, index=False)
+    print("Data of %s station was saved." % s)
+    del files, air_quality, path
 
-# Convert the data type of DATE to datetime
-air_quality["DATE"] = pd.to_datetime(air_quality.DATE, format="%d/%m/%Y")
 
-# Sort the data by STATION, DATE and HOUR
-air_quality.sort(["STATION", "DATE", "HOUR"])
 
-# Save air_quality
-air_quality.to_csv("data/air_quality.tsv", sep="\t")
+
+#air_quality.to_csv("data/air_quality.tsv", sep="\t")
 #air_quality.to_pickle("data/air_quality.pkl")
 
 

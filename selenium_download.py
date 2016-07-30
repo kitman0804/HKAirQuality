@@ -31,13 +31,13 @@ station = ["CENTRAL/WESTERN",
            "YUEN LONG", 
            "CAUSEWAY BAY", 
            "CENTRAL", 
-           "MONG KOK"]
+           "MONG KOK", ]
 
 
 # Air quality parameters
 param = ["Carbon Monoxide", "Fine Suspended Particulates", "Nitrogen Dioxide", 
          "Nitrogen Oxides", "Ozone", "Respirable Suspended Particulates", 
-         "Sulphur Dioxide"]
+         "Sulphur Dioxide", ]
 
 
 # Set Chrome preference
@@ -64,7 +64,7 @@ def dl_csv(station, startYear=1990, endYear=2016):
     wait.until(lambda dr: dr.find_element_by_xpath("//html").is_displayed())
     
     # Select station s
-    driver.find_element_by_xpath("//a[contains(text(), '" + station + "')]").click()
+    driver.find_element_by_xpath("//a[text() = '" + station + "']").click()
     time.sleep(0.5)
     # Wait until the page is loaded
     wait = ui.WebDriverWait(driver, 5)
